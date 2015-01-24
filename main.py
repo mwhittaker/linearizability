@@ -77,8 +77,9 @@ class History(object):
             print (x0, y0)
             plt.plot([x0, x1], [y0, y1], color=color, **style)
 
-        def point(x, y, color):
+        def point(x, y, s, color):
             plt.scatter([x], [y], color=color, marker="|", **style)
+            plt.text(x, y + 0.1, s, size=8, family="monospace", ha="center")
 
         def ellipsis(x, y, color):
             plt.scatter([x + 0.2, x + 0.4, x + 0.6], [y] * 3, color=color, marker=".", alpha = 0.9)
@@ -91,7 +92,7 @@ class History(object):
                 a = iter(l)
             return itertools.izip(a, a)
 
-        plt.figure()
+        plt.figure(figsize=(12.5, 5))
 
         procs  = enumerate_dict(sorted(dedup(e.proc for e in self.history)))
         colors = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
@@ -103,6 +104,8 @@ class History(object):
             history = list(enumerate(self.parent.history))
 
         for (proc, y) in procs.iteritems():
+            plt.text(-0.5, y, "process {}".format(proc), family="monospace", size="8", ha="right", va="center")
+
             subhistory = pairwise([(i, e) for (i, e) in history if e.proc == proc])
 
             for (a, b) in subhistory:
@@ -112,11 +115,11 @@ class History(object):
                 if b is not None:
                     (i1, e1) = b
                     line((i0, y), (i1, y), color)
-                    point(i0, y, color)
-                    point(i1, y, color)
+                    point(i0, y, str(e0), color)
+                    point(i1, y, str(e1), color)
                 else:
                     line((i0, y), (i0 + 2, y), color)
-                    point(i0, y, color)
+                    point(i0, y, str(e0), color)
                     ellipsis(i0 + 2, y, color)
 
         plt.axis("scaled")
