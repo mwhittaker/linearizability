@@ -61,25 +61,37 @@ class History(object):
             return {x: i for (i, x) in enumerate(l)}
 
         def color(i):
-            colors = "bgrcmykw"
+            colors = [
+                "#f17d80",
+                "#737495",
+                "#68a8ad",
+                "#c4d4af",
+                "#6c8672",
+            ]
             return colors[i % len(colors)]
 
+        style = {
+                "linewidth": 2,
+        }
         def line((x0, y0), (x1, y1), color):
-            plt.plot([x0, x1], [y0, y1], color=color, alpha=0.9)
+            print (x0, y0)
+            plt.plot([x0, x1], [y0, y1], color=color, **style)
 
         def point(x, y, color):
-            plt.scatter([x], [y], color=color, alpha=0.9, marker="|")
+            plt.scatter([x], [y], color=color, marker="|", **style)
 
         def ellipsis(x, y, color):
-            plt.scatter([x + 0.2, x + 0.4, x + 0.6], [y] * 3, color=color, alpha=0.9, marker=".")
+            plt.scatter([x + 0.2, x + 0.4, x + 0.6], [y] * 3, color=color, marker=".", alpha = 0.9)
 
-        def pairwise(iterable):
+        def pairwise(l):
             """http://stackoverflow.com/a/5389547/3187068"""
-            a = iter(iterable)
+            if len(l) % 2 != 0:
+                a = iter(l + [None])
+            else:
+                a = iter(l)
             return itertools.izip(a, a)
 
         plt.figure()
-        plt.axis("off")
 
         procs  = enumerate_dict(sorted(dedup(e.proc for e in self.history)))
         colors = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
@@ -90,24 +102,25 @@ class History(object):
         else:
             history = list(enumerate(self.parent.history))
 
-        for (proc, i) in procs.iteritems():
-            subhistory = [(i, e) for (i, e) in history if e.proc == proc]
-            if len(subhistory) % 2 != 0:
-                subhistory.append(None)
-            subhistory = pairwise(subhistory)
+        for (proc, y) in procs.iteritems():
+            subhistory = pairwise([(i, e) for (i, e) in history if e.proc == proc])
 
             for (a, b) in subhistory:
-                if b is not None:
-                    (i0, e0) = a
-                    (i1, e1) = b
-                    line((i0, procs[proc]), (i1, procs[proc]), "r")
-                    point(i0, procs[proc], "r")
-                    point(i1, procs[proc], "r")
-                else:
-                    (i0, e0) = a
-                    line((i0, procs[proc]), (i0 + 1, procs[proc]), "r")
-                    ellipsis(i0 + 1, procs[proc], "r")
+                (i0, e0) = a
+                color = colors[e0.obj]
 
+                if b is not None:
+                    (i1, e1) = b
+                    line((i0, y), (i1, y), color)
+                    point(i0, y, color)
+                    point(i1, y, color)
+                else:
+                    line((i0, y), (i0 + 2, y), color)
+                    point(i0, y, color)
+                    ellipsis(i0 + 2, y, color)
+
+        plt.axis("scaled")
+        plt.axis("off")
         plt.savefig(filename, bbox_inches="tight")
 
 def main():
@@ -121,8 +134,10 @@ def main():
         B.p.Ok(),
         A.p.Ok(),
         A.q.Deq(),
+        C.r.Enq(z),
         A.q.Fail(),
-        B.q.Enq(x)
+        B.q.Enq(x),
+        C.r.Ok(),
     ])
     H.plot("example.svg")
 
