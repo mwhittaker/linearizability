@@ -1,7 +1,5 @@
+import itertools
 import matplotlib.pyplot as plt
-
-def line((x0, y0), (x1, y1)):
-    plt.plot([x0, x1], [y0, y1], color="r")
 
 class Event(object):
     def __init__(self, obj, method, args, proc):
@@ -39,20 +37,6 @@ class Process(object):
     def __str__(self):
         return self.proc
 
-class ProcType(type):
-    def __getattr__(cls, proc):
-        return Process(proc)
-
-class Proc:
-    __metaclass__ = ProcType
-
-class ArgType(type):
-    def __getattr__(cls, arg):
-        return arg
-
-class Arg:
-    __metaclass__ = ArgType
-
 class History(object):
     def __init__(self, history, parent=None):
         self.history = history
@@ -80,24 +64,67 @@ class History(object):
             colors = "bgrcmykw"
             return colors[i % len(colors)]
 
-        procs = enumerate_dict(sorted(dedup(e.proc for e in self.history)))
-        objs  = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
-        objs  = {obj: color(i) for (obj, i) in objs.iteritems()}
-        print procs
-        print objs
+        def line((x0, y0), (x1, y1), color):
+            plt.plot([x0, x1], [y0, y1], color=color, alpha=0.9)
+
+        def point(x, y, color):
+            plt.scatter([x], [y], color=color, alpha=0.9, marker="|")
+
+        def ellipsis(x, y, color):
+            plt.scatter([x + 0.2, x + 0.4, x + 0.6], [y] * 3, color=color, alpha=0.9, marker=".")
+
+        def pairwise(iterable):
+            """http://stackoverflow.com/a/5389547/3187068"""
+            a = iter(iterable)
+            return itertools.izip(a, a)
+
+        plt.figure()
+        plt.axis("off")
+
+        procs  = enumerate_dict(sorted(dedup(e.proc for e in self.history)))
+        colors = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
+        colors = {obj: color(i) for (obj, i) in colors.iteritems()}
+
+        if self.parent is None:
+            history = list(enumerate(self.history))
+        else:
+            history = list(enumerate(self.parent.history))
 
         for (proc, i) in procs.iteritems():
-            subhistory = [e for e in self.history if e.proc == proc]
-            print subhistory
+            subhistory = [(i, e) for (i, e) in history if e.proc == proc]
+            if len(subhistory) % 2 != 0:
+                subhistory.append(None)
+            subhistory = pairwise(subhistory)
+
+            for (a, b) in subhistory:
+                if b is not None:
+                    (i0, e0) = a
+                    (i1, e1) = b
+                    line((i0, procs[proc]), (i1, procs[proc]), "r")
+                    point(i0, procs[proc], "r")
+                    point(i1, procs[proc], "r")
+                else:
+                    (i0, e0) = a
+                    line((i0, procs[proc]), (i0 + 1, procs[proc]), "r")
+                    ellipsis(i0 + 1, procs[proc], "r")
+
+        plt.savefig(filename, bbox_inches="tight")
 
 def main():
-    A, B, C = Proc.A, Proc.B, Proc.C
+    A, B, C = Process("A"), Process("B"), Process("C")
     p, q    = A.p, A.q
-    x, y, z = Arg.x, Arg.y, Arg.z
+    x, y, z = "x", "y", "z"
 
-    H = History([A.p.Enq(x), B.p.Enq(y), B.p.Ok(), A.p.Ok()])
-    print H
-    H.plot("foo")
+    H = History([
+        A.p.Enq(x),
+        B.p.Enq(y),
+        B.p.Ok(),
+        A.p.Ok(),
+        A.q.Deq(),
+        A.q.Fail(),
+        B.q.Enq(x)
+    ])
+    H.plot("example.svg")
 
 if __name__ == "__main__":
     main()
