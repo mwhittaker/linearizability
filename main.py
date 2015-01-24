@@ -74,7 +74,6 @@ class History(object):
                 "linewidth": 2,
         }
         def line((x0, y0), (x1, y1), color):
-            print (x0, y0)
             plt.plot([x0, x1], [y0, y1], color=color, **style)
 
         def point(x, y, s, color):
@@ -92,9 +91,9 @@ class History(object):
                 a = iter(l)
             return itertools.izip(a, a)
 
-        plt.figure(figsize=(12.5, 5))
+        plt.figure(figsize=(10, 5))
 
-        procs  = enumerate_dict(sorted(dedup(e.proc for e in self.history)))
+        procs  = enumerate_dict(reversed(sorted(dedup(e.proc for e in self.history))))
         colors = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
         colors = {obj: color(i) for (obj, i) in colors.iteritems()}
 
@@ -131,18 +130,69 @@ def main():
     p, q    = A.p, A.q
     x, y, z = "x", "y", "z"
 
-    H = History([
-        A.p.Enq(x),
-        B.p.Enq(y),
+    History([
+        A.p.E(x),
+        B.p.E(y),
         B.p.Ok(),
         A.p.Ok(),
-        A.q.Deq(),
-        C.r.Enq(z),
-        A.q.Fail(),
-        B.q.Enq(x),
-        C.r.Ok(),
-    ])
-    H.plot("example.svg")
+        B.p.D(),
+        B.p.Ok(x),
+        A.p.D(),
+        A.p.Ok(y),
+        A.p.E(z),
+    ]).plot("qa.png")
+
+    History([
+        A.p.E(x),
+        A.p.Ok(),
+        B.p.E(y),
+        A.p.D(),
+        B.p.Ok(),
+        A.p.Ok(y),
+    ]).plot("qb.png")
+
+    History([
+        A.p.E(x),
+        B.p.D(),
+        B.p.Ok(x),
+    ]).plot("qc.png")
+
+    History([
+        A.p.E(x),
+        B.p.E(y),
+        A.p.Ok(),
+        B.p.Ok(),
+        A.p.D(),
+        C.p.D(),
+        A.p.Ok(y),
+        C.p.Ok(y),
+    ]).plot("qd.png")
+
+    History([
+        A.p.W(0),
+        A.p.Ok(),
+        B.p.W(1),
+        A.p.R(),
+        A.p.Ok(1),
+        C.p.W(0),
+        C.p.Ok(),
+        B.p.OK(),
+        B.p.R(),
+        B.p.Ok(0),
+    ]).plot("ra.png")
+
+    History([
+        A.p.W(0),
+        A.p.Ok(),
+        B.p.W(1),
+        A.p.R(),
+        A.p.Ok(1),
+        C.p.W(0),
+        C.p.Ok(),
+        B.p.OK(),
+        B.p.R(),
+        B.p.Ok(1),
+    ]).plot("rb.png")
 
 if __name__ == "__main__":
     main()
