@@ -73,6 +73,7 @@ class History(object):
         style = {
                 "linewidth": 2,
         }
+
         def line((x0, y0), (x1, y1), color):
             plt.plot([x0, x1], [y0, y1], color=color, **style)
 
@@ -101,6 +102,7 @@ class History(object):
             history = list(enumerate(self.history))
         else:
             history = list(enumerate(self.parent.history))
+            history = [(i, e) for (i, e) in history if e in self.history]
 
         for (proc, y) in procs.iteritems():
             plt.text(-0.5, y, "process {}".format(proc), family="monospace", size="8", ha="right", va="center")
@@ -120,6 +122,11 @@ class History(object):
                     line((i0, y), (i0 + 2, y), color)
                     point(i0, y, str(e0), color)
                     ellipsis(i0 + 2, y, color)
+
+        # Hack to get single process timelines to print.
+        if (len(procs) == 1):
+            m = max(history, key=lambda(i, _): i)[0]
+            plt.scatter([0, m], [-0.1, 0.1], alpha=0)
 
         plt.axis("scaled")
         plt.axis("off")
