@@ -94,15 +94,20 @@ class History(object):
 
         plt.figure(figsize=(10, 5))
 
-        procs  = enumerate_dict(reversed(sorted(dedup(e.proc for e in self.history))))
-        colors = enumerate_dict(sorted(dedup(e.obj  for e in self.history)))
-        colors = {obj: color(i) for (obj, i) in colors.iteritems()}
-
         if self.parent is None:
             history = list(enumerate(self.history))
+            parent  = self.history
         else:
             history = list(enumerate(self.parent.history))
+            parent  = self.parent.history
             history = [(i, e) for (i, e) in history if e in self.history]
+
+        procs  = enumerate_dict(reversed(sorted(dedup(e.proc for e in parent))))
+        colors = enumerate_dict(sorted(dedup(e.obj  for e in parent)))
+        colors = {obj: color(i) for (obj, i) in colors.iteritems()}
+
+        for (x, proc) in enumerate(parent):
+            plt.scatter([x], [procs[proc.proc]], alpha=0)
 
         for (proc, y) in procs.iteritems():
             plt.text(-0.5, y, "process {}".format(proc), family="monospace", size="8", ha="right", va="center")
